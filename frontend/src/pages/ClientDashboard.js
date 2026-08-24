@@ -824,6 +824,8 @@ const ClientDashboard = () => {
   const [shakingBell, setShakingBell] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [termsCardOpen, setTermsCardOpen] = useState(false);
+  const [downgradeState, setDowngradeState] = useState('idle');
+  const [downgradeMessage, setDowngradeMessage] = useState('');
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [checkoutPlan, setCheckoutPlan] = useState(null);
   const [checkoutMethod, setCheckoutMethod] = useState('card');
@@ -1350,15 +1352,23 @@ const ClientDashboard = () => {
 
     try {
       if (p === 'free') {
+        if (downgradeState === 'loading') return;
+        setDowngradeState('loading');
+        setDowngradeMessage('Downgrading your plan…');
         const token = localStorage.getItem('sah_token');
         if (!token || token.startsWith('local_')) {
-          showNotification('Please log in with your backend account before changing paid plans.', 'error');
+          const message = 'Please log in with your backend account before changing paid plans.';
+          setDowngradeState('error');
+          setDowngradeMessage(message);
+          showNotification(message, 'error');
           return;
         }
 
         await api.cancelSubscription(token);
         upd({ plan: 'free', listingPlan: 'free', tier: 'free', billingStatus: 'cancelled', requestedPlan: null });
         if (updateUserPlan) updateUserPlan('free');
+        setDowngradeState('success');
+        setDowngradeMessage('Your plan has been downgraded to Community Member.');
         showNotification(`Plan changed to ${names[p]}`, 'success');
         return;
       }
@@ -1388,7 +1398,12 @@ const ClientDashboard = () => {
         phone: profileData.phone || '',
       });
     } catch (error) {
-      showNotification(error.message || 'Could not start payment checkout.', 'error');
+      const message = error.message || (p === 'free' ? 'Could not downgrade your plan.' : 'Could not start payment checkout.');
+      if (p === 'free') {
+        setDowngradeState('error');
+        setDowngradeMessage(message);
+      }
+      showNotification(message, 'error');
     }
   };
 
@@ -1737,17 +1752,19 @@ const ClientDashboard = () => {
       )}
       <div
         className="cd-sidebar-card cd-terms-card"
-        onClick={() => setTermsCardOpen(open => !open)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setTermsCardOpen(open => !open);
-          }
-        }}
       >
-        <div className="cd-sidebar-header">
+        <div
+          className="cd-sidebar-header"
+          onClick={() => setTermsCardOpen(open => !open)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setTermsCardOpen(open => !open);
+            }
+          }}
+        >
           <div className="cd-sidebar-title"><i className="fas fa-file-contract" style={{ marginRight: 6 }}></i>Terms & Conditions</div>
           <i className={`fas fa-chevron-down cd-terms-toggle${termsCardOpen ? ' open' : ''}`}></i>
         </div>
@@ -1767,16 +1784,26 @@ const ClientDashboard = () => {
               Read More <i className="fas fa-chevron-right"></i>
             </button>
             {(profileData.plan || 'free') !== 'free' && (
+              <>
               <button
                 type="button"
                 className="cd-sidebar-downgrade"
+                disabled={downgradeState === 'loading'}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   handlePlanChange('free');
                 }}
               >
-                <i className="fas fa-arrow-down"></i> Downgrade Plan
+                <i className={`fas ${downgradeState === 'loading' ? 'fa-spinner fa-spin' : 'fa-arrow-down'}`}></i>
+                {downgradeState === 'loading' ? 'Downgrading…' : 'Downgrade Plan'}
               </button>
+              {downgradeMessage && (
+                <p style={{ margin: '8px 0 0', fontSize: '.72rem', lineHeight: 1.45, color: downgradeState === 'success' ? '#2e7d32' : downgradeState === 'error' ? '#b42318' : '#555' }}>
+                  {downgradeMessage}
+                </p>
+              )}
+              </>
             )}
           </div>
         ) : (
@@ -3009,7 +3036,7 @@ const ClientDashboard = () => {
               <>
                 {checkoutMethod === 'card' && (
                   <div className="cd-payment-form">
-                    <div className="cd-payment-note"><i className="fas fa-shield-halved"></i> Test payment - no real charge will be made. Real card payments will use Paystack secure checkout or secure payment fields.</div>
+                    <div className="cd-payment-note"><i className="fas fa-shield-halved"></i> Secure payment — you will be redirected to Paystack's live checkout to complete the payment.</div>
                     <div className="cd-payment-grid">
                       <label>Name on card<input value={cardForm.cardName} onChange={e => setCardForm(prev => ({ ...prev, cardName: e.target.value }))} autoComplete="cc-name" />{renderFieldError(cardErrors.cardName)}</label>
                       <label>Billing email<input type="email" value={cardForm.email} onChange={e => setCardForm(prev => ({ ...prev, email: e.target.value }))} autoComplete="email" />{renderFieldError(cardErrors.email)}</label>

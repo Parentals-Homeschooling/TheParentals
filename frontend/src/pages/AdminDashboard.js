@@ -10,6 +10,7 @@ import ReviewCard from '../components/admin/ReviewCard';
 import { reviewsMock } from '../utils/constants';
 import { escapeHtml } from '../utils/helpers';
 import { api } from '../services/api';
+import { getNewsletterSubscribers, getPlusRequests, getNewsletterCampaigns, saveNewsletterCampaign, savePlusRequest } from '../utils/plusBenefits';
 import '../assets/css/dashboard.css';
 
 /* ── localStorage helpers ────────────────────────────────── */
@@ -1165,6 +1166,10 @@ const AdminDashboard = () => {
   const [revenuePkgFilter, setRevenuePkgFilter] = useState('ALL');
   // Floating card state
   const [floatingProvider, setFloatingProvider] = useState(null);
+  const [plusRequests, setPlusRequests] = useState(() => getPlusRequests());
+  const [newsletterSubject, setNewsletterSubject] = useState('');
+  const [newsletterBody, setNewsletterBody] = useState('');
+  const [campaigns, setCampaigns] = useState(() => getNewsletterCampaigns());
 
   useEffect(() => {
     if (!document.getElementById('adm-styles')) {
@@ -1519,6 +1524,19 @@ const AdminDashboard = () => {
 
   const fmtZAR = (n) => `R ${n.toLocaleString('en-ZA')}`;
 
+  const updatePlusRequest = (request, status) => {
+    savePlusRequest({ ...request, status, updatedAt: new Date().toISOString() });
+    setPlusRequests(getPlusRequests());
+    showNotification(`Request marked ${status}.`, 'success');
+  };
+  const createNewsletterCampaign = (status) => {
+    if (!newsletterSubject.trim() || !newsletterBody.trim()) return showNotification('Add a subject and newsletter content first.', 'error');
+    const recipients = getNewsletterSubscribers().filter(item => item.status === 'active');
+    const campaign = { id: `campaign_${Date.now()}`, subject: newsletterSubject.trim(), body: newsletterBody.trim(), status, recipients: recipients.length, createdAt: new Date().toISOString() };
+    saveNewsletterCampaign(campaign); setCampaigns(getNewsletterCampaigns()); setNewsletterSubject(''); setNewsletterBody('');
+    showNotification(status === 'queued' ? `Newsletter queued for ${recipients.length} subscribers.` : 'Newsletter draft saved.', 'success');
+  };
+
   return (
     <>
       <Header userType="admin" />
@@ -1562,6 +1580,7 @@ const AdminDashboard = () => {
               { id: 'revenue',  icon: 'fa-chart-pie',         label: 'Packages & Revenue',badge: paidProviders.length || undefined },
               { id: 'users',    icon: 'fa-users',             label: 'Users & Accounts',  badge: registeredUsers.length },
               { id: 'logs',     icon: 'fa-clock-rotate-left', label: 'Auth Logs',         badge: authLogs.length > 0 ? authLogs.length : undefined },
+              { id: 'promotion', icon: 'fa-bullhorn',          label: 'Plus Promotion',   badge: plusRequests.filter(r => r.status === 'submitted').length || undefined },
             ].map(tab => (
               <button key={tab.id} className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
                 role="tab" aria-selected={activeTab === tab.id}
@@ -1720,6 +1739,17 @@ const AdminDashboard = () => {
                 <i className="fas fa-circle-info"></i>
                 <p><strong>Review Moderation:</strong> Only approved reviews appear on client profile pages.</p>
               </div>
+            </div>
+          )}
+
+          {activeTab === 'promotion' && (
+            <div className="tab-pane active" role="tabpanel">
+              <p className="section-heading"><i className="fas fa-envelope-open-text"></i> Newsletter subscribers &amp; Parental Plus fulfilment</p>
+              <div className="adm-revenue-summary" style={{ marginBottom: 18 }}><div className="adm-rev-box"><div className="adm-rev-box-val">{getNewsletterSubscribers().filter(item => item.status === 'active').length}</div><div className="adm-rev-box-label">Active subscribers</div></div><div className="adm-rev-box"><div className="adm-rev-box-val">{plusRequests.filter(item => item.status === 'submitted').length}</div><div className="adm-rev-box-label">Requests awaiting review</div></div></div>
+              <div className="card" style={{ padding: 18, marginBottom: 18, boxShadow: 'none' }}><strong>Compose newsletter</strong><input className="adm-search-input" style={{ width:'100%', marginTop: 12 }} placeholder="Email subject" value={newsletterSubject} onChange={e => setNewsletterSubject(e.target.value)} /><textarea className="adm-search-input" style={{ width:'100%', minHeight: 130, marginTop: 10 }} placeholder="Write the newsletter. Include approved provider features and links." value={newsletterBody} onChange={e => setNewsletterBody(e.target.value)} /><div style={{ display:'flex', gap:8, marginTop:10 }}><button className="adm-promote-btn" onClick={() => createNewsletterCampaign('draft')}>Save draft</button><button className="adm-promote-btn" onClick={() => createNewsletterCampaign('queued')}>Queue for delivery</button></div></div>
+              <p className="section-heading"><i className="fas fa-bullhorn"></i> Provider benefit requests</p>
+              {plusRequests.length ? plusRequests.map(request => <div className="adm-listing-row" key={request.id}><div style={{ flex:1 }}><strong>{request.providerName || 'Provider'} — {request.title}</strong><div style={{ fontSize:'.8rem', marginTop:4, color:'#666', whiteSpace:'pre-wrap' }}>{request.content}</div><small>{request.status} · {new Date(request.createdAt).toLocaleDateString('en-ZA')}</small></div><div style={{ display:'flex', gap:6 }}><button className="adm-promote-btn" onClick={() => updatePlusRequest(request, 'approved')}>Approve</button><button className="adm-demote-btn" onClick={() => updatePlusRequest(request, 'completed')}>Complete</button></div></div>) : <div className="info-block"><p>No Parental Plus requests yet.</p></div>}
+              {campaigns.length > 0 && <><p className="section-heading" style={{ marginTop:20 }}>Campaign history</p>{campaigns.map(c => <div className="adm-listing-row" key={c.id}><div><strong>{c.subject}</strong><div style={{ fontSize:'.8rem', color:'#666' }}>{c.status} · {c.recipients} recipients · {new Date(c.createdAt).toLocaleDateString('en-ZA')}</div></div></div>)}</>}
             </div>
           )}
 

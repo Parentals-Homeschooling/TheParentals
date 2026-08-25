@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../services/api";
 import SocialSignIn from "../components/common/SocialSignIn";
+import { subscribeToNewsletter } from "../utils/plusBenefits";
 
 const injectHead = () => {
   if (document.getElementById("sah-fonts")) return;
@@ -970,6 +971,7 @@ export default function HomePage() {
       return;
     }
     setNlMsg({ text:"You're subscribed — thank you!", type:"success" });
+    subscribeToNewsletter(nlEmail, 'homepage');
     setNlEmail("");
   };
 

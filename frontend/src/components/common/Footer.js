@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { subscribeToNewsletter } from '../../utils/plusBenefits';
 
 /* ── Inject footer CSS once — exact match to HomePage ───────────────────── */
 const FOOTER_CSS = `
@@ -238,7 +239,8 @@ const Footer = () => {
 
   const handleNewsletter = () => {
     if (nlEmail && /\S+@\S+\.\S+/.test(nlEmail)) {
-      setNlMsg({ text: 'Thanks for subscribing!', type: 'success' });
+      const { created } = subscribeToNewsletter(nlEmail, 'footer');
+      setNlMsg({ text: created ? 'Thanks for subscribing!' : 'You are already subscribed.', type: 'success' });
       setNlEmail('');
       setTimeout(() => setNlMsg({ text: '', type: '' }), 4000);
     } else {

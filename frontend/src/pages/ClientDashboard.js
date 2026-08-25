@@ -10,6 +10,7 @@ import { DAYS_OF_WEEK, PRICING_MODELS, PROVINCES } from '../utils/constants';
 import { getPlanLimits } from '../utils/helpers';
 import { formatInquiryDate, getInquiries, markInquiryRead, respondToInquiry } from '../utils/inquiries';
 import { api, apiRequest } from '../services/api';
+import { createPlusRequest, getPlusRequests } from '../utils/plusBenefits';
 import '../assets/css/dashboard.css'
 
 /* ─────────────── localStorage helpers ─────────────── */
@@ -479,6 +480,7 @@ const TABS = [
   { id: 'location', label: 'Location & Pricing', icon: 'fa-map-marker-alt' },
   { id: 'contact',  label: 'Contact & Social',   icon: 'fa-address-card' },
   { id: 'plan',     label: 'Plan & Reviews',     icon: 'fa-crown' },
+  { id: 'promotion', label: 'Plus Promotion',    icon: 'fa-bullhorn' },
 ];
 
 /* ─────────────── styles ─────────────── */
@@ -838,6 +840,9 @@ const ClientDashboard = () => {
   const [copiedPaymentField, setCopiedPaymentField] = useState('');
   const [bankCountdown, setBankCountdown] = useState('');
   const [autosaveStatus, setAutosaveStatus] = useState('saved');
+  const [plusRequests, setPlusRequests] = useState(() => getPlusRequests());
+  const [plusRequestType, setPlusRequestType] = useState('newsletter');
+  const [plusRequestText, setPlusRequestText] = useState('');
 
   /* inject CSS once */
   useEffect(() => {
@@ -2610,6 +2615,28 @@ const ClientDashboard = () => {
     </div>
   );
 
+  const renderTabPromotion = () => {
+    const mine = plusRequests.filter(item => String(item.providerId) === String(profileData.id || profileData.userId));
+    const canUse = profileData.plan === 'pro' || profileData.plan === 'featured';
+    const submit = () => {
+      if (!plusRequestText.trim()) return showNotification('Add the copy or brief you would like us to use.', 'error');
+      const labels = { newsletter: 'Newsletter inclusion', social: 'Facebook & Instagram post', article: 'Native article' };
+      createPlusRequest({ providerId: profileData.id || profileData.userId, providerName: profileData.businessName || profileData.name, type: plusRequestType, title: labels[plusRequestType], content: plusRequestText.trim() });
+      setPlusRequests(getPlusRequests()); setPlusRequestText('');
+      showNotification('Your Parental Plus request was sent to the team.', 'success');
+    };
+    return <div className="cd-content">
+      <div className="cd-card"><div className="cd-card-head"><div><div className="cd-card-title">Parental Plus promotion</div><div className="cd-card-subtitle">Submit your included newsletter, social or article request for review.</div></div></div>
+        {!canUse ? <div className="cd-value empty">Upgrade to Parental Plus+ to use the monthly promotional benefits.</div> : <>
+          <div className="cd-row-2" style={{ marginTop: 16 }}><div><label className="cd-label">Benefit</label><select className="cd-input" value={plusRequestType} onChange={e => setPlusRequestType(e.target.value)}><option value="newsletter">Monthly newsletter inclusion</option><option value="social">Facebook & Instagram post</option><option value="article">Native article (up to 800 words)</option></select></div></div>
+          <label className="cd-label" style={{ marginTop: 12 }}>Copy or content brief</label><textarea className="cd-input" rows="6" value={plusRequestText} onChange={e => setPlusRequestText(e.target.value)} placeholder="Tell the team about your offer, key message, link and any image requirements." />
+          <button className="cd-save-btn" type="button" style={{ marginTop: 14 }} onClick={submit}><i className="fas fa-paper-plane" /> Submit for review</button>
+        </>}
+      </div>
+      <div className="cd-card"><div className="cd-card-head"><div><div className="cd-card-title">Your requests</div></div></div>{mine.length ? mine.map(item => <div key={item.id} className="cd-value" style={{ marginTop: 10 }}><strong>{item.title}</strong> <span style={{ color:'#6f8da6' }}>— {item.status}</span><br /><small>{new Date(item.createdAt).toLocaleDateString('en-ZA')}</small></div>) : <div className="cd-value empty">No promotion requests yet.</div>}</div>
+    </div>;
+  };
+
   const renderActiveTab = () => {
     if (dataLoading) {
       return (
@@ -2627,6 +2654,7 @@ const ClientDashboard = () => {
       case 'location': return renderTabLocation();
       case 'contact':  return renderTabContact();
       case 'plan':     return renderTabPlan();
+      case 'promotion': return renderTabPromotion();
       default:         return renderTabProfile();
     }
   };

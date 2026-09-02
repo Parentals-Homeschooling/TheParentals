@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../services/api";
 import SocialSignIn from "../components/common/SocialSignIn";
-import { subscribeToNewsletter } from "../utils/plusBenefits";
+import { subscribeToNewsletter, getPublishedPromotions } from "../utils/plusBenefits";
 
 const injectHead = () => {
   if (document.getElementById("sah-fonts")) return;
@@ -262,6 +262,37 @@ const CSS = `
   /* SECTION LABEL DIVIDER */
   .sah-section-label{display:flex;align-items:center;gap:12px;margin:0 0 16px;font-size:0.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.8px;color:var(--accent);}
   .sah-section-label::after{content:'';flex:1;height:1px;background:rgba(85,118,145,0.2);}
+
+  /* PLUS+ PUBLISHED CONTENT */
+  .sah-promo-section{padding:70px 0;background:#f6f2ec;border-top:1px solid var(--border);}
+  .sah-promo-header{max-width:680px;margin-bottom:28px;}
+  .sah-promo-header h2{font-family:'Playfair Display',serif;font-size:clamp(1.5rem,3vw,2rem);color:var(--dark);margin:4px 0 0;}
+  .sah-promo-header p{max-width:590px;color:var(--muted);font-family:'DM Sans','Segoe UI',sans-serif;font-size:.9rem;line-height:1.65;margin:9px 0 0;}
+  .sah-promo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;}
+  .sah-promo-card{position:relative;display:flex;flex-direction:column;overflow:hidden;padding:27px 20px 20px;border:1px solid rgba(111,141,166,.22);border-radius:14px;background:linear-gradient(145deg,#fff 0%,#fff 72%,#f7fbfe 100%);box-shadow:0 8px 24px rgba(42,58,72,.09);cursor:pointer;text-align:left;font-family:inherit;transition:transform .18s,box-shadow .18s,border-color .18s;}
+  .sah-promo-card::before,.sah-promo-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:7px;background:linear-gradient(90deg,#6f8da6 0 38%,#ff8c42 38% 72%,#e62925 72% 100%);}
+  .sah-promo-card::after{content:'';position:absolute;right:-34px;bottom:-42px;width:110px;height:110px;border-radius:50%;background:rgba(111,141,166,.07);pointer-events:none;}
+  .sah-promo-card:hover,.sah-promo-card:focus-visible{transform:translateY(-4px);box-shadow:0 15px 34px rgba(42,58,72,.16);border-color:#9bb5ca;outline:none;}
+  .sah-promo-kind{display:inline-flex;align-items:center;gap:7px;width:fit-content;padding:5px 10px;border-radius:99px;background:#edf7ff;border:1px solid #b7d5ea;color:#557691;font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:.4px;}
+  .sah-promo-kind i{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border-radius:5px;background:#6f8da6;color:#fff;font-size:.58rem;}
+  .sah-promo-card h3{margin:14px 0 7px;color:var(--dark);font-family:'Playfair Display',Georgia,serif;font-size:1.08rem;line-height:1.35;}
+  .sah-promo-provider{color:#b76514;font-size:.7rem;font-weight:800;margin-bottom:9px;}
+  .sah-promo-copy{color:var(--mid);font-size:.8rem;line-height:1.65;white-space:pre-wrap;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden;}
+  .sah-promo-date{margin-top:14px;padding-top:10px;border-top:1px solid var(--border);color:var(--grey);font-size:.67rem;}
+  .sah-promo-open{display:inline-flex;align-items:center;gap:7px;width:fit-content;margin-top:15px;padding:7px 11px;border-radius:7px;background:#fff3e8;color:#b76514;font-size:.74rem;font-weight:900;transition:background .15s,color .15s;}
+  .sah-promo-card:hover .sah-promo-open{background:#ff8c42;color:#fff;}
+  .sah-promo-modal-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(24,35,48,.58);backdrop-filter:blur(4px);}
+  .sah-promo-modal{position:relative;width:min(720px,100%);max-height:calc(100vh - 44px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.45);border-radius:16px;background:#fff;box-shadow:0 28px 80px rgba(24,35,48,.3);}
+  .sah-promo-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:22px 24px;border-bottom:1px solid var(--border);background:#f8fcff;}
+  .sah-promo-modal-head h2{margin:10px 0 0;font-family:'Playfair Display',Georgia,serif;font-size:clamp(1.3rem,3vw,1.75rem);line-height:1.25;color:var(--dark);}
+  .sah-promo-modal-close{width:34px;height:34px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid #dbe8f1;border-radius:9px;background:#fff;color:var(--accent-dark);cursor:pointer;font-size:.9rem;}
+  .sah-promo-modal-close:hover{background:#edf7ff;}
+  .sah-promo-modal-body{padding:22px 24px;overflow-y:auto;}
+  .sah-promo-modal-byline{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:17px;padding-bottom:13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.75rem;}
+  .sah-promo-modal-provider{color:#b76514;font-weight:800;}
+  .sah-promo-modal-content{color:var(--mid);font-family:'DM Sans','Segoe UI',sans-serif;font-size:.92rem;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;}
+  @media(max-width:900px){.sah-promo-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:600px){.sah-promo-grid{grid-template-columns:1fr;}.sah-promo-modal-overlay{padding:12px}.sah-promo-modal-head,.sah-promo-modal-body{padding:18px;}}
 
   /* HOW IT WORKS */
   .sah-how-section{padding:76px 0;background:var(--white);}
@@ -806,6 +837,8 @@ export default function HomePage() {
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [headingIndex, setHeadingIndex] = useState(0);
   const [headingPaused, setHeadingPaused] = useState(false);
+  const [publishedPromotions, setPublishedPromotions] = useState(() => getPublishedPromotions());
+  const [selectedPromotion, setSelectedPromotion] = useState(null);
 
   useEffect(() => {
     injectHead();
@@ -827,10 +860,32 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    const refreshPromotions = () => setPublishedPromotions(getPublishedPromotions());
+    window.addEventListener('storage', refreshPromotions);
+    window.addEventListener('sah-promotions-updated', refreshPromotions);
+    return () => {
+      window.removeEventListener('storage', refreshPromotions);
+      window.removeEventListener('sah-promotions-updated', refreshPromotions);
+    };
+  }, []);
+
+  useEffect(() => {
     const h = (e) => { if (e.key === "Escape") { setRegModal(false); setLoginModal(m => ({ ...m, open:false })); } };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
+
+  useEffect(() => {
+    if (!selectedPromotion) return undefined;
+    const close = event => { if (event.key === 'Escape') setSelectedPromotion(null); };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', close);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', close);
+    };
+  }, [selectedPromotion]);
 
   useEffect(() => {
     if (currentUser || sessionStorage.getItem('sah_signup_prompt_dismissed') === '1') return undefined;
@@ -1170,6 +1225,31 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {publishedPromotions.length > 0 && (
+        <section className="sah-promo-section" id="sah-promotions">
+          <div className="sah-container">
+            <div className="sah-promo-header"><div><span className="sah-sec-eyebrow">From our Plus+ providers</span><h2>Promotions &amp; Advice</h2></div><p>Helpful updates, offers and expert articles from services supporting families.</p></div>
+            <div className="sah-promo-grid">
+              {publishedPromotions.slice(0, 6).map(item => <article className="sah-promo-card" key={item.id} role="button" tabIndex="0" aria-label={`Open ${item.subject}`} onClick={() => setSelectedPromotion(item)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedPromotion(item); } }}>
+                <span className="sah-promo-kind"><i className={`fas ${item.type === 'article' ? 'fa-newspaper' : 'fa-hashtag'}`} />{item.type === 'article' ? 'Native article' : 'Social post'}</span>
+                <h3>{item.subject}</h3>
+                {item.providerName && <div className="sah-promo-provider">By {item.providerName}</div>}
+                <div className="sah-promo-copy">{item.body}</div>
+                <span className="sah-promo-open"><i className="fas fa-arrow-up-right-from-square" />{item.type === 'article' ? 'Read full article' : 'View full post'}</span>
+                <div className="sah-promo-date">Published {new Date(item.publishedAt || item.createdAt).toLocaleDateString('en-ZA', { day:'numeric', month:'long', year:'numeric' })}</div>
+              </article>)}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {selectedPromotion && <div className="sah-promo-modal-overlay" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedPromotion(null); }}>
+        <section className="sah-promo-modal" role="dialog" aria-modal="true" aria-labelledby="sah-promo-modal-title">
+          <div className="sah-promo-modal-head"><div><span className="sah-promo-kind"><i className={`fas ${selectedPromotion.type === 'article' ? 'fa-newspaper' : 'fa-hashtag'}`} />{selectedPromotion.type === 'article' ? 'Native article' : 'Social post'}</span><h2 id="sah-promo-modal-title">{selectedPromotion.subject}</h2></div><button className="sah-promo-modal-close" type="button" aria-label="Close promotion" onClick={() => setSelectedPromotion(null)}><i className="fas fa-times" /></button></div>
+          <div className="sah-promo-modal-body"><div className="sah-promo-modal-byline">{selectedPromotion.providerName && <span className="sah-promo-modal-provider">By {selectedPromotion.providerName}</span>}<span>Published {new Date(selectedPromotion.publishedAt || selectedPromotion.createdAt).toLocaleDateString('en-ZA', { day:'numeric', month:'long', year:'numeric' })}</span></div><div className="sah-promo-modal-content">{selectedPromotion.body}</div></div>
+        </section>
+      </div>}
 
       {/* HOW IT WORKS */}
       <section className="sah-how-section" id="sah-how">

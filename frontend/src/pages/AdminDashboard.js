@@ -319,6 +319,28 @@ const ADMIN_CSS = `
   .adm-promote-btn:hover { background:#bfdbfe; }
   .adm-demote-btn  { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:6px; cursor:pointer; font-size:0.77rem; font-weight:700; border:none; font-family:inherit; background:#6f8da6; color:#fff; transition:all 0.15s; }
   .adm-demote-btn:hover  { background:#557691; }
+  .adm-publish-btn { display:inline-flex; align-items:center; gap:5px; padding:6px 12px; border:0; border-radius:6px; background:#ff8c42; color:#fff; font:inherit; font-size:.77rem; font-weight:800; cursor:pointer; box-shadow:0 5px 12px rgba(255,140,66,.2); }
+  .adm-publish-btn:hover { background:#f47b2b; }
+  .adm-plus-request { cursor:pointer; align-items:flex-start; }
+  .adm-plus-request-main { flex:1; min-width:0; }
+  .adm-plus-request-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .adm-plus-request-preview { max-width:760px; margin-top:5px; color:#666; font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .adm-plus-type { display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:99px; background:#edf7ff; border:1px solid #c8dce9; color:#557691; font-size:.65rem; font-weight:800; }
+  .adm-plus-request-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  .adm-plus-composer { padding:18px; margin-bottom:18px; border-top:3px solid #6f8da6; box-shadow:none; }
+  .adm-plus-composer-head { display:flex; align-items:flex-start; gap:11px; margin-bottom:12px; }
+  .adm-plus-composer-icon { width:36px; height:36px; border-radius:9px; background:#6f8da6; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .adm-plus-composer-title { color:#1a1a1a; font-size:.95rem; font-weight:800; }
+  .adm-plus-composer-note { color:#777; font-size:.72rem; margin-top:2px; }
+  .adm-plus-context { margin-left:auto; padding:4px 9px; border-radius:99px; background:#fff3e8; color:#b76514; border:1px solid #ffd2b5; font-size:.66rem; font-weight:800; }
+  .adm-plus-detail { display:grid; gap:14px; }
+  .adm-plus-detail-meta { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .adm-plus-detail-box { padding:11px 13px; border:1px solid #e5e0d8; border-radius:8px; background:#faf9f7; }
+  .adm-plus-detail-label { display:block; margin-bottom:4px; color:#888; font-size:.64rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+  .adm-plus-detail-value { color:#242424; font-size:.82rem; line-height:1.55; }
+  .adm-plus-detail-brief { padding:14px; border-left:3px solid #6f8da6; border-radius:8px; background:#f8fcff; color:#3f4d58; font-size:.84rem; line-height:1.65; white-space:pre-wrap; }
+  .adm-plus-modal-actions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+  @media(max-width:700px) { .adm-plus-request { flex-direction:column; } .adm-plus-request-actions { width:100%; } .adm-plus-detail-meta { grid-template-columns:1fr; } .adm-plus-context { margin-left:0; } }
   .adm-badge-opt { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:5px; cursor:pointer; font-size:0.72rem; font-weight:700; transition:all 0.14s; border:1.5px solid transparent; }
   .adm-badge-opt.community { background:#f9fafb; color:#6b7280; border-color:#e5e7eb; }
   .adm-badge-opt.community.selected { background:#e5e7eb; color:#374151; border-color:#9ca3af; }
@@ -1137,6 +1159,11 @@ const FloatingProfileCard = ({ provider, featuredSlots, onApprove, onReject, onC
 };
 
 const EMPTY_MODAL = { title: '', body: '' };
+const PROMOTION_FORMATS = {
+  newsletter: { label: 'Newsletter', icon: 'fa-envelope-open-text', subjectLabel: 'Email subject', subjectPlaceholder: 'Enter the newsletter subject', bodyPlaceholder: 'Write the newsletter content. Include the provider feature and relevant links.', draft: 'Save newsletter draft', publish: 'Prepare subscriber delivery' },
+  social: { label: 'Social post', icon: 'fa-hashtag', subjectLabel: 'Post title', subjectPlaceholder: 'Add an internal title for this post', bodyPlaceholder: 'Write the social caption. Include handles, hashtags, links and the call to action.', draft: 'Save post draft', publish: 'Publish to homepage' },
+  article: { label: 'Native article', icon: 'fa-newspaper', subjectLabel: 'Article headline', subjectPlaceholder: 'Enter the article headline', bodyPlaceholder: 'Write the native article (up to 800 words), including the provider link and call to action.', draft: 'Save article draft', publish: 'Publish to homepage' },
+};
 
 /* ═══════════════════════════════════════════════════════════
    ADMIN DASHBOARD
@@ -1167,6 +1194,8 @@ const AdminDashboard = () => {
   // Floating card state
   const [floatingProvider, setFloatingProvider] = useState(null);
   const [plusRequests, setPlusRequests] = useState(() => getPlusRequests());
+  const [selectedPlusRequest, setSelectedPlusRequest] = useState(null);
+  const [plusRequestModalOpen, setPlusRequestModalOpen] = useState(false);
   const [newsletterSubject, setNewsletterSubject] = useState('');
   const [newsletterBody, setNewsletterBody] = useState('');
   const [campaigns, setCampaigns] = useState(() => getNewsletterCampaigns());
@@ -1525,16 +1554,69 @@ const AdminDashboard = () => {
   const fmtZAR = (n) => `R ${n.toLocaleString('en-ZA')}`;
 
   const updatePlusRequest = (request, status) => {
-    savePlusRequest({ ...request, status, updatedAt: new Date().toISOString() });
+    const updated = { ...request, status, updatedAt: new Date().toISOString() };
+    savePlusRequest(updated);
     setPlusRequests(getPlusRequests());
+    if (selectedPlusRequest?.id === request.id) setSelectedPlusRequest(updated);
     showNotification(`Request marked ${status}.`, 'success');
   };
+  const activePromotionFormat = PROMOTION_FORMATS[selectedPlusRequest?.type] || PROMOTION_FORMATS.newsletter;
+  const openPlusRequest = (request) => {
+    setSelectedPlusRequest(request);
+    setNewsletterSubject(`${request.providerName || 'Provider'} — ${request.title || activePromotionFormat.label}`);
+    setNewsletterBody(request.content || '');
+    setPlusRequestModalOpen(true);
+  };
   const createNewsletterCampaign = (status) => {
-    if (!newsletterSubject.trim() || !newsletterBody.trim()) return showNotification('Add a subject and newsletter content first.', 'error');
+    if (!newsletterSubject.trim() || !newsletterBody.trim()) return showNotification(`Add the ${activePromotionFormat.subjectLabel.toLowerCase()} and content first.`, 'error');
     const recipients = getNewsletterSubscribers().filter(item => item.status === 'active');
-    const campaign = { id: `campaign_${Date.now()}`, subject: newsletterSubject.trim(), body: newsletterBody.trim(), status, recipients: recipients.length, createdAt: new Date().toISOString() };
+    const type = selectedPlusRequest?.type || 'newsletter';
+    const isNewsletter = type === 'newsletter';
+    const finalStatus = status === 'publish' ? (isNewsletter ? 'ready-for-delivery' : 'published') : 'draft';
+    const now = new Date().toISOString();
+    const campaign = { id: `campaign_${Date.now()}`, requestId: selectedPlusRequest?.id || null, providerId: selectedPlusRequest?.providerId || null, providerName: selectedPlusRequest?.providerName || '', type, subject: newsletterSubject.trim(), body: newsletterBody.trim(), status: finalStatus, recipients: isNewsletter ? recipients.length : 0, recipientEmails: isNewsletter ? recipients.map(item => item.email) : [], createdAt: now, publishedAt: status === 'publish' ? now : null };
     saveNewsletterCampaign(campaign); setCampaigns(getNewsletterCampaigns()); setNewsletterSubject(''); setNewsletterBody('');
-    showNotification(status === 'queued' ? `Newsletter queued for ${recipients.length} subscribers.` : 'Newsletter draft saved.', 'success');
+    if (status === 'publish' && selectedPlusRequest) updatePlusRequest(selectedPlusRequest, isNewsletter ? 'delivery ready' : 'published');
+    showNotification(status === 'publish' ? (isNewsletter ? `Newsletter prepared for ${recipients.length} active subscribers.` : `${activePromotionFormat.label} published to the homepage.`) : `${activePromotionFormat.label} draft saved.`, 'success');
+  };
+  const publishPlusRequest = (request) => {
+    const format = PROMOTION_FORMATS[request.type] || PROMOTION_FORMATS.newsletter;
+    const isNewsletter = request.type === 'newsletter';
+    const recipients = getNewsletterSubscribers().filter(item => item.status === 'active');
+    const now = new Date().toISOString();
+    const campaign = {
+      id: `campaign_${Date.now()}`,
+      requestId: request.id,
+      providerId: request.providerId || null,
+      providerName: request.providerName || '',
+      type: request.type || 'newsletter',
+      subject: `${request.providerName || 'Provider'} — ${format.label}`,
+      body: request.content || '',
+      status: isNewsletter ? 'ready-for-delivery' : 'published',
+      recipients: isNewsletter ? recipients.length : 0,
+      recipientEmails: isNewsletter ? recipients.map(item => item.email) : [],
+      createdAt: now,
+      publishedAt: now,
+    };
+    saveNewsletterCampaign(campaign);
+    setCampaigns(getNewsletterCampaigns());
+    updatePlusRequest(request, isNewsletter ? 'delivery ready' : 'published');
+    showNotification(isNewsletter ? `Newsletter prepared for ${recipients.length} active subscribers.` : `${format.label} is now live on the homepage.`, 'success');
+  };
+  const unpublishCampaign = (campaign) => {
+    const now = new Date().toISOString();
+    saveNewsletterCampaign({ ...campaign, status: 'draft', publishedAt: null, unpublishedAt: now });
+    setCampaigns(getNewsletterCampaigns());
+
+    const linkedRequest = plusRequests.find(request => request.id === campaign.requestId);
+    if (linkedRequest) {
+      const updatedRequest = { ...linkedRequest, status: 'approved', updatedAt: now };
+      savePlusRequest(updatedRequest);
+      setPlusRequests(getPlusRequests());
+      if (selectedPlusRequest?.id === linkedRequest.id) setSelectedPlusRequest(updatedRequest);
+    }
+
+    showNotification(`${(PROMOTION_FORMATS[campaign.type] || PROMOTION_FORMATS.newsletter).label} unpublished and returned to draft.`, 'success');
   };
 
   return (
@@ -1746,10 +1828,16 @@ const AdminDashboard = () => {
             <div className="tab-pane active" role="tabpanel">
               <p className="section-heading"><i className="fas fa-envelope-open-text"></i> Newsletter subscribers &amp; Parental Plus fulfilment</p>
               <div className="adm-revenue-summary" style={{ marginBottom: 18 }}><div className="adm-rev-box"><div className="adm-rev-box-val">{getNewsletterSubscribers().filter(item => item.status === 'active').length}</div><div className="adm-rev-box-label">Active subscribers</div></div><div className="adm-rev-box"><div className="adm-rev-box-val">{plusRequests.filter(item => item.status === 'submitted').length}</div><div className="adm-rev-box-label">Requests awaiting review</div></div></div>
-              <div className="card" style={{ padding: 18, marginBottom: 18, boxShadow: 'none' }}><strong>Compose newsletter</strong><input className="adm-search-input" style={{ width:'100%', marginTop: 12 }} placeholder="Email subject" value={newsletterSubject} onChange={e => setNewsletterSubject(e.target.value)} /><textarea className="adm-search-input" style={{ width:'100%', minHeight: 130, marginTop: 10 }} placeholder="Write the newsletter. Include approved provider features and links." value={newsletterBody} onChange={e => setNewsletterBody(e.target.value)} /><div style={{ display:'flex', gap:8, marginTop:10 }}><button className="adm-promote-btn" onClick={() => createNewsletterCampaign('draft')}>Save draft</button><button className="adm-promote-btn" onClick={() => createNewsletterCampaign('queued')}>Queue for delivery</button></div></div>
+              <div className="card adm-plus-composer">
+                <div className="adm-plus-composer-head"><div className="adm-plus-composer-icon"><i className={`fas ${activePromotionFormat.icon}`} /></div><div><div className="adm-plus-composer-title">Compose {activePromotionFormat.label.toLowerCase()}</div><div className="adm-plus-composer-note">{selectedPlusRequest ? `Working from ${selectedPlusRequest.providerName || 'provider'}'s selected request.` : 'Select a provider request below to load its format and brief.'}</div></div>{selectedPlusRequest && <span className="adm-plus-context">Selected request</span>}</div>
+                <label className="adm-plus-detail-label">{activePromotionFormat.subjectLabel}</label><input className="adm-search-input" style={{ width:'100%' }} placeholder={activePromotionFormat.subjectPlaceholder} value={newsletterSubject} onChange={e => setNewsletterSubject(e.target.value)} />
+                <label className="adm-plus-detail-label" style={{ marginTop:12 }}>Content</label><textarea className="adm-search-input" style={{ width:'100%', minHeight: 150 }} placeholder={activePromotionFormat.bodyPlaceholder} value={newsletterBody} onChange={e => setNewsletterBody(e.target.value)} />
+                <div className="info-block" style={{ marginTop:10 }}><i className="fas fa-circle-info" /><p>{selectedPlusRequest?.type === 'newsletter' ? `This prepares a delivery record for ${getNewsletterSubscribers().filter(item => item.status === 'active').length} active subscribers. Connect an email service to send outside the platform.` : 'Publishing makes this content visible in the Promotions & Advice section on the homepage.'}</p></div>
+                <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}><button className="adm-promote-btn" onClick={() => createNewsletterCampaign('draft')}>{activePromotionFormat.draft}</button><button className="adm-demote-btn" onClick={() => createNewsletterCampaign('publish')}>{activePromotionFormat.publish}</button></div>
+              </div>
               <p className="section-heading"><i className="fas fa-bullhorn"></i> Provider benefit requests</p>
-              {plusRequests.length ? plusRequests.map(request => <div className="adm-listing-row" key={request.id}><div style={{ flex:1 }}><strong>{request.providerName || 'Provider'} — {request.title}</strong><div style={{ fontSize:'.8rem', marginTop:4, color:'#666', whiteSpace:'pre-wrap' }}>{request.content}</div><small>{request.status} · {new Date(request.createdAt).toLocaleDateString('en-ZA')}</small></div><div style={{ display:'flex', gap:6 }}><button className="adm-promote-btn" onClick={() => updatePlusRequest(request, 'approved')}>Approve</button><button className="adm-demote-btn" onClick={() => updatePlusRequest(request, 'completed')}>Complete</button></div></div>) : <div className="info-block"><p>No Parental Plus requests yet.</p></div>}
-              {campaigns.length > 0 && <><p className="section-heading" style={{ marginTop:20 }}>Campaign history</p>{campaigns.map(c => <div className="adm-listing-row" key={c.id}><div><strong>{c.subject}</strong><div style={{ fontSize:'.8rem', color:'#666' }}>{c.status} · {c.recipients} recipients · {new Date(c.createdAt).toLocaleDateString('en-ZA')}</div></div></div>)}</>}
+              {plusRequests.length ? plusRequests.map(request => { const format = PROMOTION_FORMATS[request.type] || PROMOTION_FORMATS.newsletter; const isLive = request.status === 'published' || request.status === 'delivery ready'; return <div className={`adm-listing-row adm-plus-request ${selectedPlusRequest?.id === request.id ? 'selected' : ''}`} key={request.id}><div className="adm-plus-request-main"><div className="adm-plus-request-top"><strong>{request.providerName || 'Provider'} — {format.label}</strong><span className="adm-plus-type"><i className={`fas ${format.icon}`} /> {format.label}</span></div><div className="adm-plus-request-preview">{request.content}</div><small>{request.status} · {new Date(request.createdAt).toLocaleDateString('en-ZA')}</small></div><div className="adm-plus-request-actions"><button className="adm-promote-btn" onClick={() => openPlusRequest(request)}><i className="fas fa-eye" /> View details</button>{!isLive && <button className="adm-promote-btn" onClick={() => updatePlusRequest(request, 'approved')}>Approve</button>}{!isLive && <button className="adm-publish-btn" onClick={() => publishPlusRequest(request)}><i className="fas fa-paper-plane" />{request.type === 'newsletter' ? 'Prepare delivery' : 'Publish'}</button>}{isLive && request.type !== 'newsletter' && <button className="adm-promote-btn" onClick={() => navigate('/#sah-promotions')}><i className="fas fa-arrow-up-right-from-square" /> View on homepage</button>}</div></div>; }) : <div className="info-block"><p>No Parental Plus requests yet.</p></div>}
+              {campaigns.length > 0 && <><p className="section-heading" style={{ marginTop:20 }}>Promotion history</p>{campaigns.map(c => { const format = PROMOTION_FORMATS[c.type] || PROMOTION_FORMATS.newsletter; const isPublished = c.status === 'published' || c.status === 'ready-for-delivery'; return <div className="adm-listing-row" key={c.id}><div style={{ flex:1 }}><strong><i className={`fas ${format.icon}`} style={{ color:'#6f8da6', marginRight:7 }} />{c.subject}</strong><div style={{ fontSize:'.8rem', color:'#666' }}>{format.label} · {c.status}{c.type === 'newsletter' || !c.type ? ` · ${c.recipients} recipients` : ''} · {new Date(c.createdAt).toLocaleDateString('en-ZA')}</div></div>{isPublished && <button className="adm-publish-btn" style={{ background:'#b42318' }} onClick={() => unpublishCampaign(c)}><i className="fas fa-eye-slash" /> Unpublish</button>}</div>; })}</>}
             </div>
           )}
 
@@ -2053,6 +2141,21 @@ const AdminDashboard = () => {
       {modalOpen && (
         <Modal isOpen={modalOpen} onClose={closeModal} title={modalContent.title}>
           <div dangerouslySetInnerHTML={{ __html: modalContent.body }} />
+        </Modal>
+      )}
+
+      {plusRequestModalOpen && selectedPlusRequest && (
+        <Modal isOpen={plusRequestModalOpen} onClose={() => setPlusRequestModalOpen(false)} title={`${selectedPlusRequest.providerName || 'Provider'} — ${(PROMOTION_FORMATS[selectedPlusRequest.type] || PROMOTION_FORMATS.newsletter).label}`}>
+          <div className="adm-plus-detail">
+            <div className="adm-plus-detail-meta">
+              <div className="adm-plus-detail-box"><span className="adm-plus-detail-label">Promotion type</span><div className="adm-plus-detail-value"><i className={`fas ${(PROMOTION_FORMATS[selectedPlusRequest.type] || PROMOTION_FORMATS.newsletter).icon}`} style={{ color:'#6f8da6', marginRight:7 }} />{(PROMOTION_FORMATS[selectedPlusRequest.type] || PROMOTION_FORMATS.newsletter).label}</div></div>
+              <div className="adm-plus-detail-box"><span className="adm-plus-detail-label">Status</span><div className="adm-plus-detail-value" style={{ textTransform:'capitalize' }}>{selectedPlusRequest.status}</div></div>
+              <div className="adm-plus-detail-box"><span className="adm-plus-detail-label">Provider</span><div className="adm-plus-detail-value">{selectedPlusRequest.providerName || 'Provider'}</div></div>
+              <div className="adm-plus-detail-box"><span className="adm-plus-detail-label">Submitted</span><div className="adm-plus-detail-value">{fmtDate(selectedPlusRequest.createdAt)}</div></div>
+            </div>
+            <div><span className="adm-plus-detail-label">Provider brief</span><div className="adm-plus-detail-brief">{selectedPlusRequest.content || 'No brief supplied.'}</div></div>
+            <div className="adm-plus-modal-actions"><button className="adm-promote-btn" onClick={() => updatePlusRequest(selectedPlusRequest, 'approved')}>Approve request</button><button className="adm-demote-btn" onClick={() => updatePlusRequest(selectedPlusRequest, 'completed')}>Mark complete</button><button className="adm-demote-btn" style={{ background:'#ff8c42' }} onClick={() => setPlusRequestModalOpen(false)}>Use in composer</button></div>
+          </div>
         </Modal>
       )}
 

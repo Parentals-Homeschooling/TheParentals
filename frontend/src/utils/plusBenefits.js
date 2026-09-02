@@ -28,6 +28,7 @@ export const savePlusRequest = (request) => {
   const i = requests.findIndex(item => item.id === request.id);
   if (i >= 0) requests[i] = request; else requests.unshift(request);
   write('sah_plus_benefit_requests', requests);
+  window.dispatchEvent(new Event('sah-plus-requests-updated'));
   return request;
 };
 export const createPlusRequest = (data) => savePlusRequest({
@@ -40,5 +41,10 @@ export const saveNewsletterCampaign = (campaign) => {
   const i = campaigns.findIndex(item => item.id === campaign.id);
   if (i >= 0) campaigns[i] = campaign; else campaigns.unshift(campaign);
   write('sah_newsletter_campaigns', campaigns);
+  window.dispatchEvent(new Event('sah-promotions-updated'));
   return campaign;
 };
+
+export const getPublishedPromotions = () => getNewsletterCampaigns()
+  .filter(item => item.status === 'published' && (item.type === 'social' || item.type === 'article'))
+  .sort((a, b) => new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt));

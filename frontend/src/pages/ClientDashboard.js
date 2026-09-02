@@ -152,6 +152,8 @@ function buildProviderSaveFormData(toSave, currentData = {}) {
     languages:           toSave.languages,
     primaryCategory:     toSave.primaryCategory,
     secondaryCategories: toSave.secondaryCategories,
+    tags:                toSave.tags,
+    services:            toSave.services,
     serviceTitle:        toSave.serviceTitle,
     serviceDesc:         toSave.serviceDesc,
     subjects:            toSave.subjects,
@@ -160,12 +162,14 @@ function buildProviderSaveFormData(toSave, currentData = {}) {
     city:                toSave.city,
     province:            toSave.province,
     serviceAreaType:     toSave.serviceAreaType,
+    serviceAreas:        toSave.serviceAreas,
     radius:              toSave.radius,
     pricingModel:        toSave.pricingModel,
     startingPrice:       toSave.startingPrice,
     availabilityDays:    toSave.availabilityDays,
     availabilityNotes:   toSave.availabilityNotes,
     phone:               toSave.phone,
+    contactName:         toSave.contactName,
     whatsapp:            toSave.whatsapp,
     inquiryEmail:        toSave.contactEmail,
     website:             toSave.website,
@@ -174,6 +178,7 @@ function buildProviderSaveFormData(toSave, currentData = {}) {
     linkedin:            toSave.linkedin,
     tiktok:              toSave.tiktok,
     twitter:             toSave.twitter,
+    youtube:             toSave.youtube,
     degrees:             toSave.degrees,
     certifications:      toSave.certifications,
     memberships:         toSave.memberships,
@@ -613,6 +618,43 @@ const DASH_CSS = `
   .cd-input:focus { border-color:#6f8da6; box-shadow:0 0 0 3px rgba(85,118,145,.11); }
   .cd-textarea { resize:vertical; min-height:82px; }
   .cd-select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; padding-right:30px; cursor:pointer; }
+  .cd-promo-intro { display:flex; align-items:flex-start; gap:13px; padding:14px 16px; margin-bottom:18px; border:1px solid #dbe8f1; border-radius:10px; background:#f8fcff; color:#4e6477; font-size:.8rem; line-height:1.55; }
+  .cd-promo-intro i { width:30px; height:30px; border-radius:8px; background:#6f8da6; color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .cd-promo-intro strong { display:block; margin-bottom:2px; color:#243746; font-size:.84rem; }
+  .cd-promo-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:11px; margin:7px 0 18px; }
+  .cd-promo-option { position:relative; min-height:132px; padding:15px; border:1.5px solid #e5e0d8; border-radius:10px; background:#fff; color:#555; text-align:left; font-family:inherit; cursor:pointer; transition:border-color .16s,box-shadow .16s,transform .16s,background .16s; }
+  .cd-promo-option:hover { border-color:#9bb5ca; transform:translateY(-1px); box-shadow:0 7px 18px rgba(111,141,166,.12); }
+  .cd-promo-option.active { border-color:#6f8da6; background:#f4faff; box-shadow:0 0 0 3px rgba(111,141,166,.1); }
+  .cd-promo-option-icon { width:35px; height:35px; border-radius:9px; background:#edf7ff; color:#6f8da6; display:flex; align-items:center; justify-content:center; margin-bottom:11px; }
+  .cd-promo-option.active .cd-promo-option-icon { background:#6f8da6; color:#fff; }
+  .cd-promo-option-check { position:absolute; top:12px; right:12px; color:#ff8c42; font-size:.9rem; }
+  .cd-promo-option-title { color:#1a1a1a; font-size:.84rem; font-weight:800; margin-bottom:4px; }
+  .cd-promo-option-copy { color:#7b7b7b; font-size:.7rem; line-height:1.45; }
+  .cd-promo-form { padding:16px; border:1px solid #eee8df; border-radius:10px; background:#faf9f7; }
+  .cd-promo-form-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:10px; }
+  .cd-promo-form-title { color:#243746; font-size:.83rem; font-weight:800; }
+  .cd-promo-form-hint { color:#888; font-size:.69rem; line-height:1.45; margin-top:2px; }
+  .cd-promo-textarea { min-height:150px; resize:vertical; background:#fff; line-height:1.55; }
+  .cd-promo-form-footer { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:11px; flex-wrap:wrap; }
+  .cd-promo-note { color:#8a8278; font-size:.68rem; }
+  .cd-promo-submit { display:inline-flex; align-items:center; justify-content:center; gap:7px; padding:10px 17px; border:0; border-radius:8px; background:#ff8c42; color:#fff; font:inherit; font-size:.78rem; font-weight:800; cursor:pointer; transition:background .15s,transform .15s; }
+  .cd-promo-submit:hover { background:#f47b2b; transform:translateY(-1px); }
+  .cd-promo-upgrade { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:18px; border:1px solid #f5d2b9; border-radius:10px; background:#fff8f2; color:#755036; }
+  .cd-promo-upgrade strong { display:block; color:#9f531d; margin-bottom:4px; }
+  .cd-promo-upgrade p { margin:0; font-size:.78rem; line-height:1.5; }
+  .cd-promo-upgrade button { border:0; border-radius:8px; padding:9px 14px; background:#ff8c42; color:#fff; font:inherit; font-size:.76rem; font-weight:800; cursor:pointer; white-space:nowrap; }
+  .cd-promo-list { display:flex; flex-direction:column; }
+  .cd-promo-request { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #f0ece5; }
+  .cd-promo-request:last-child { border-bottom:0; }
+  .cd-promo-request-icon { width:38px; height:38px; border-radius:9px; background:#edf7ff; color:#6f8da6; display:flex; align-items:center; justify-content:center; }
+  .cd-promo-request-title { color:#1a1a1a; font-size:.82rem; font-weight:800; }
+  .cd-promo-request-date { color:#999; font-size:.68rem; margin-top:2px; }
+  .cd-promo-status { display:inline-flex; align-items:center; gap:5px; padding:5px 9px; border-radius:99px; background:#fff7e6; border:1px solid #f6d58c; color:#a76213; font-size:.65rem; font-weight:800; text-transform:capitalize; }
+  .cd-promo-status.approved, .cd-promo-status.published { background:#ecfdf5; border-color:#a7f3d0; color:#047857; }
+  .cd-promo-status.delivery-ready { background:#eff6ff; border-color:#bfdbfe; color:#1d4ed8; }
+  .cd-promo-status.rejected { background:#fff1f0; border-color:#fecaca; color:#b42318; }
+  .cd-promo-empty { padding:24px 16px; border:1.5px dashed #d9e3ea; border-radius:10px; background:#f8fcff; color:#718698; text-align:center; font-size:.78rem; }
+  .cd-promo-empty i { display:block; margin-bottom:8px; color:#9bb5ca; font-size:1.15rem; }
   .cd-row   { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .cd-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
   .cd-svc-card { background:#faf9f7; border:1px solid #e5e0d8; border-radius:9px; padding:14px 16px; margin-bottom:10px; }
@@ -778,6 +820,7 @@ const DASH_CSS = `
   .cd-docs-empty { font-size:0.8rem; color:#bbb; font-style:italic; padding:8px 0; }
   @media(max-width:1024px) { .cd-layout { grid-template-columns:1fr; } .cd-plan-grid { grid-template-columns:1fr; } }
   @media(max-width:768px)  { .cd-main { padding:16px 14px 48px; } .cd-alert-wrap { padding:12px 14px 0; } .cd-hero-top { padding:0 16px 24px; } .cd-tab-bar { padding:8px 14px; gap:6px; overflow-x:auto; flex-wrap:nowrap; } .cd-row { grid-template-columns:1fr; } .cd-svc-grid { grid-template-columns:1fr 1fr; } }
+  @media(max-width:700px) { .cd-promo-options { grid-template-columns:1fr; } .cd-promo-option { min-height:0; } .cd-promo-upgrade { align-items:flex-start; flex-direction:column; } }
   @media(max-width:620px)  { .cd-payment-methods { grid-template-columns:1fr; } .cd-payment-summary { grid-template-columns:1fr; } .cd-payment-amount { text-align:left; } .cd-payment-grid { grid-template-columns:1fr; } .cd-payment-result-grid { grid-template-columns:1fr; } }
   @media(max-width:768px){
   .cd-hero-top { padding: 0 14px 20px; }
@@ -843,6 +886,16 @@ const ClientDashboard = () => {
   const [plusRequests, setPlusRequests] = useState(() => getPlusRequests());
   const [plusRequestType, setPlusRequestType] = useState('newsletter');
   const [plusRequestText, setPlusRequestText] = useState('');
+
+  useEffect(() => {
+    const refreshPlusRequests = () => setPlusRequests(getPlusRequests());
+    window.addEventListener('storage', refreshPlusRequests);
+    window.addEventListener('sah-plus-requests-updated', refreshPlusRequests);
+    return () => {
+      window.removeEventListener('storage', refreshPlusRequests);
+      window.removeEventListener('sah-plus-requests-updated', refreshPlusRequests);
+    };
+  }, []);
 
   /* inject CSS once */
   useEffect(() => {
@@ -2618,22 +2671,40 @@ const ClientDashboard = () => {
   const renderTabPromotion = () => {
     const mine = plusRequests.filter(item => String(item.providerId) === String(profileData.id || profileData.userId));
     const canUse = profileData.plan === 'pro' || profileData.plan === 'featured';
+    const benefits = [
+      { id: 'newsletter', title: 'Newsletter', icon: 'fa-envelope-open-text', description: 'Feature your service or offer in our monthly newsletter.', prompt: 'Include your offer, key message, preferred link, call to action and any image notes.' },
+      { id: 'social', title: 'Social post', icon: 'fa-hashtag', description: 'A dedicated post for our Facebook and Instagram audience.', prompt: 'Share the caption idea, preferred link, social handles, call to action and image requirements.' },
+      { id: 'article', title: 'Native article', icon: 'fa-newspaper', description: 'An informative branded article of up to 800 words.', prompt: 'Outline the topic, audience, key takeaways, expert details, preferred link and call to action.' },
+    ];
+    const selectedBenefit = benefits.find(item => item.id === plusRequestType) || benefits[0];
+    const iconFor = type => benefits.find(item => item.id === type)?.icon || 'fa-bullhorn';
     const submit = () => {
       if (!plusRequestText.trim()) return showNotification('Add the copy or brief you would like us to use.', 'error');
-      const labels = { newsletter: 'Newsletter inclusion', social: 'Facebook & Instagram post', article: 'Native article' };
+      const labels = { newsletter: 'Newsletter', social: 'Social post', article: 'Native article' };
       createPlusRequest({ providerId: profileData.id || profileData.userId, providerName: profileData.businessName || profileData.name, type: plusRequestType, title: labels[plusRequestType], content: plusRequestText.trim() });
       setPlusRequests(getPlusRequests()); setPlusRequestText('');
       showNotification('Your Parental Plus request was sent to the team.', 'success');
     };
     return <div className="cd-content">
-      <div className="cd-card"><div className="cd-card-head"><div><div className="cd-card-title">Parental Plus promotion</div><div className="cd-card-subtitle">Submit your included newsletter, social or article request for review.</div></div></div>
-        {!canUse ? <div className="cd-value empty">Upgrade to Parental Plus+ to use the monthly promotional benefits.</div> : <>
-          <div className="cd-row-2" style={{ marginTop: 16 }}><div><label className="cd-label">Benefit</label><select className="cd-input" value={plusRequestType} onChange={e => setPlusRequestType(e.target.value)}><option value="newsletter">Monthly newsletter inclusion</option><option value="social">Facebook & Instagram post</option><option value="article">Native article (up to 800 words)</option></select></div></div>
-          <label className="cd-label" style={{ marginTop: 12 }}>Copy or content brief</label><textarea className="cd-input" rows="6" value={plusRequestText} onChange={e => setPlusRequestText(e.target.value)} placeholder="Tell the team about your offer, key message, link and any image requirements." />
-          <button className="cd-save-btn" type="button" style={{ marginTop: 14 }} onClick={submit}><i className="fas fa-paper-plane" /> Submit for review</button>
-        </>}
+      <div className="cd-card">
+        <div className="cd-card-header"><div className="cd-card-header-icon"><i className="fas fa-bullhorn" /></div><div><div className="cd-card-title">Parental Plus promotion</div><div className="cd-card-subtitle">Choose a benefit and send your content to our team.</div></div></div>
+        <div className="cd-card-body">
+          {!canUse ? <div className="cd-promo-upgrade"><div><strong>Promotion benefits are included with Parental Plus+</strong><p>Subscribe to request newsletter features, social posts and native articles.</p></div><button type="button" onClick={() => setActiveTab('plan')}>View Plus+ plan</button></div> : <>
+            <div className="cd-promo-intro"><i className="fas fa-star" /><div><strong>Your Plus+ promotional benefits</strong>Select one of the three formats below. Your request will be reviewed by our team before it is scheduled or published.</div></div>
+            <label className="cd-label">1. Choose your promotion type</label>
+            <div className="cd-promo-options">{benefits.map(benefit => <button key={benefit.id} type="button" className={`cd-promo-option ${plusRequestType === benefit.id ? 'active' : ''}`} aria-pressed={plusRequestType === benefit.id} onClick={() => setPlusRequestType(benefit.id)}>{plusRequestType === benefit.id && <i className="fas fa-check-circle cd-promo-option-check" />}<span className="cd-promo-option-icon"><i className={`fas ${benefit.icon}`} /></span><div className="cd-promo-option-title">{benefit.title}</div><div className="cd-promo-option-copy">{benefit.description}</div></button>)}</div>
+            <div className="cd-promo-form">
+              <div className="cd-promo-form-head"><div><div className="cd-promo-form-title">2. Add your {selectedBenefit.title.toLowerCase()} brief</div><div className="cd-promo-form-hint">{selectedBenefit.prompt}</div></div></div>
+              <textarea className="cd-input cd-promo-textarea" maxLength="4000" value={plusRequestText} onChange={e => setPlusRequestText(e.target.value)} placeholder={`Tell us what you would like included in your ${selectedBenefit.title.toLowerCase()}...`} aria-label={`${selectedBenefit.title} content brief`} />
+              <div className="cd-promo-form-footer"><span className="cd-promo-note">{plusRequestText.length.toLocaleString()} / 4,000 characters</span><button className="cd-promo-submit" type="button" onClick={submit}><i className="fas fa-paper-plane" /> Submit for review</button></div>
+            </div>
+          </>}
+        </div>
       </div>
-      <div className="cd-card"><div className="cd-card-head"><div><div className="cd-card-title">Your requests</div></div></div>{mine.length ? mine.map(item => <div key={item.id} className="cd-value" style={{ marginTop: 10 }}><strong>{item.title}</strong> <span style={{ color:'#6f8da6' }}>— {item.status}</span><br /><small>{new Date(item.createdAt).toLocaleDateString('en-ZA')}</small></div>) : <div className="cd-value empty">No promotion requests yet.</div>}</div>
+      <div className="cd-card">
+        <div className="cd-card-header"><div className="cd-card-header-icon"><i className="fas fa-list" /></div><div><div className="cd-card-title">Your promotion requests</div><div className="cd-card-subtitle">Track the requests you have sent to our team.</div></div></div>
+        <div className="cd-card-body tight">{mine.length ? <div className="cd-promo-list">{mine.map(item => <div key={item.id} className="cd-promo-request"><div className="cd-promo-request-icon"><i className={`fas ${iconFor(item.type)}`} /></div><div><div className="cd-promo-request-title">{item.title}</div><div className="cd-promo-request-date">Submitted {new Date(item.createdAt).toLocaleDateString('en-ZA', { day:'numeric', month:'short', year:'numeric' })}</div></div><span className={`cd-promo-status ${String(item.status).replace(/\s+/g, '-')}`}><i className="fas fa-circle" /> {item.status}</span></div>)}</div> : <div className="cd-promo-empty"><i className="far fa-paper-plane" />No requests submitted yet. Choose a promotion type above to get started.</div>}</div>
+      </div>
     </div>;
   };
 
